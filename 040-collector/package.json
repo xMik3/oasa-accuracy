@@ -1,0 +1,16 @@
+{
+  "name": "040-collector",
+  "version": "1.0.0",
+  "description": "Collects bus station ETA data for delay analysis.",
+  "main": "collector.js",
+  "type":"module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "xMik3",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "mysql2": "^3.23.1"
+  }
+}
