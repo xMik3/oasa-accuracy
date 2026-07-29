@@ -1,0 +1,35 @@
+services:
+  collector:
+    build: .
+    env_file:
+      - .env
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - collector
+
+  database:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      start_period: 10s
+      interval: 10s
+      retries: 10
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - collector
+
+volumes:
+  db-data:
+
+networks:
+  collector:
+
