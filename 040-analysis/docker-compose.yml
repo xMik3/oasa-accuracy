@@ -1,0 +1,7 @@
+services:
+  analysis:
+    build: .
+    image: bus-analysis
+    env_file: .env
+    volumes:
+      - ./output:/app/output

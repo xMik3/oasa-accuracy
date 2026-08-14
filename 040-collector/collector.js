@@ -1,18 +1,26 @@
 import mysql from "mysql2/promise";
 import "dotenv/config";
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROUTE_STOPS = JSON.parse(
+  readFileSync(path.join(__dirname, "routes.json"), "utf8")
+);
 
 const API = "https://telematics.oasa.gr/api/";
-const STOPS = (process.env.STOP_CODES ?? "").split(",").filter(Boolean);
-const ROUTES = (process.env.ROUTE_CODES ?? "").split(",").filter(Boolean);
+const ROUTES = Object.keys(ROUTE_STOPS);
+const STOPS = [...new Set(Object.values(ROUTE_STOPS).flat())];
 const INTERVAL_MS = Number(process.env.POLL_INTERVAL_SECONDS ?? 30) * 1000;
 
 if (!STOPS.length) {
-  console.error("No STOP_CODES in .env");
+  console.error("No stops found in routes.json");
   process.exit(1);
 }
 
 if (!ROUTES.length) {
-  console.error("No ROUTE_CODES in .env");
+  console.error("No routes found in routes.json");
   process.exit(1);
 }
 

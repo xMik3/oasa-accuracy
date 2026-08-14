@@ -1,2 +1,4 @@
 040-collector/.env
 040-collector/node_modules
+
+040-analysis/.env
