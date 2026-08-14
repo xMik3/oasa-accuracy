@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS eta_observations (
     route_code     VARCHAR(16) NOT NULL,
     veh_code       VARCHAR(16) NOT NULL,
     eta_minutes    SMALLINT    NOT NULL,
-    collector_version TINYINT NOT NULL DEFAULT 2,
+    active         TINYINT NOT NULL DEFAULT 1,
+    collector_version TINYINT NOT NULL DEFAULT 1,
 
     UNIQUE KEY unique_obs (fetched_at_utc, stop_code, route_code, veh_code),
 
