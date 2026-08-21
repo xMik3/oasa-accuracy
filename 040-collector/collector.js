@@ -37,6 +37,7 @@ const pool = mysql.createPool({
 //poll one stop
 async function pollStop(stopCode) {
   let at = new Date();
+  
   try {
     const resp = await fetch(
       `${API}?act=getStopArrivals&p1=${encodeURIComponent(stopCode)}`,
