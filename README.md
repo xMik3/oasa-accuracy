@@ -1,4 +1,4 @@
-# Bus Estimate Analysis
+# OASA Bus Accuracy
 
 How accurate are Athens bus (OASA) ETA predictions, and what kind of model is behind them?
 
@@ -70,7 +70,7 @@ To build them I sort all polls by time and group them by route, vehicle and stop
 
 A new episode starts if either threshold is passed, or if a bus/stop pair shows up for the first time.
 
-Gap catches the easy case, where the bus disappeared from the feed for a while so whatever comes next is a new approach. Jump catches the harder one. A real approach counts down, so if the estimate suddenly climbs, that is not the same bus getting closer, it is the same bus starting a fresh pass (we still have to leave a generous margin for an actual ETA jump between two polls).
+Gap catches the easy case, where the bus disappeared from the feed for a while so whatever comes next is a new approach. Jump catches the harder one. A real approach counts down, so if the estimate suddenly climbs, that is not the same bus getting closer, it is the same bus starting a fresh pass (I still have to leave a generous margin for an actual ETA jump between two polls).
 
 ### Working out the arrival
 
@@ -91,15 +91,15 @@ Collection started on 27 July 2026. **Everything here is August data**, which is
 
 Most predictions land close. The distribution has a sharp peak at zero and drops off fast on both sides.
 
-![Signed error distribution across all predictions](./040-analysis/output/overrun_signed_bands.png)
+![Signed error distribution across all predictions](./oasa-accuracy-analysis/output/overrun_signed_bands.png)
 
 Splitting by how far ahead the prediction was made shows where the error actually comes from. At 3–7 minutes it is narrow and leans late:
 
-![Signed error distribution for 3-7 minute predictions](./040-analysis/output/overrun_signed_bands_eta_3-7.png)
+![Signed error distribution for 3-7 minute predictions](./oasa-accuracy-analysis/output/overrun_signed_bands_eta_3-7.png)
 
 At 41+ minutes it is much wider, and the peak has moved to the *left* of zero, so long predictions run early:
 
-![Signed error distribution for 41+ minute predictions](./040-analysis/output/overrun_signed_bands_eta_41+.png)
+![Signed error distribution for 41+ minute predictions](./oasa-accuracy-analysis/output/overrun_signed_bands_eta_41+.png)
 
 The bands in between sit somewhere between these two and shift gradually from one shape to the other.
 
@@ -107,28 +107,28 @@ The bands in between sit somewhere between these two and shift gradually from on
 
 At first it looks like it matters a lot. Some stops look twice as good as others, following are the stop charts with stops in actual route order (left are early stops, right are last stops).
 
-![Accuracy within 1 minute by stop, Syntagma To Piraeus, ETA unccontrolled](./040-analysis/output/accuracy_within_1min_by_stop_route_3923.png)
+![Accuracy within 1 minute by stop, Syntagma To Piraeus, ETA unccontrolled](./oasa-accuracy-analysis/output/accuracy_within_1min_by_stop_route_3923.png)
 
-![Accuracy within 1 minute by stop, Piraeus To Syntagma, ETA unccontrolled](./040-analysis/output/accuracy_within_1min_by_stop_route_3922-3924.png)
+![Accuracy within 1 minute by stop, Piraeus To Syntagma, ETA unccontrolled](./oasa-accuracy-analysis/output/accuracy_within_1min_by_stop_route_3922-3924.png)
 
 But that is not a real difference. Stops near the end of a route collect a lot of predictions made from 40+ minutes out, and those are much less accurate. Stops near the start only ever get predicted from a few minutes away. So what that number is really measuring is **position along the route**, not the stop itself.
 
 If I only compare 3–7 minute predictions, which is the one band every stop has, the accuracy between stops becomes more stable :
 
-![Accuracy within 1 minute by stop, Syntagma to Piraeus, 3-7 minute predictions, ETA controlled](./040-analysis/output/accuracy_within_1min_by_stop_eta_3-7_route_3923.png)
+![Accuracy within 1 minute by stop, Syntagma to Piraeus, 3-7 minute predictions, ETA controlled](./oasa-accuracy-analysis/output/accuracy_within_1min_by_stop_eta_3-7_route_3923.png)
 
-![Accuracy within 1 minute by stop, Piraeus to Syntagma, 3-7 minute predictions, ETA controlled](./040-analysis/output/accuracy_within_1min_by_stop_eta_3-7_route_3922-3924.png)
+![Accuracy within 1 minute by stop, Piraeus to Syntagma, 3-7 minute predictions, ETA controlled](./oasa-accuracy-analysis/output/accuracy_within_1min_by_stop_eta_3-7_route_3922-3924.png)
 
 
 ### Does the hour matter?
 
 Accuracy barely moves by hour of day. Before controlling for anything, it sits within a few points of 40% across all 24 hours:
 
-![Accuracy within 1 minute by hour, all predictions](./040-analysis/output/accuracy_within_1min_by_hour.png)
+![Accuracy within 1 minute by hour, all predictions](./oasa-accuracy-analysis/output/accuracy_within_1min_by_hour.png)
 
 Restricting to 3–7 minute predictions lifts the whole line to around 65%, but leaves it just as flat:
 
-![Accuracy within 1 minute by hour, 3-7 minute predictions](./040-analysis/output/accuracy_within_1min_by_hour_eta_3-7.png)
+![Accuracy within 1 minute by hour, 3-7 minute predictions](./oasa-accuracy-analysis/output/accuracy_within_1min_by_hour_eta_3-7.png)
 
 Hour of day isn't what determines accuracy; how far ahead the prediction was made is.
 
@@ -142,7 +142,7 @@ In one polling round, a single bus gets an ETA for several stops at once. So if 
 
 Comparing only polls made from a similar distance away, so the horizon stays constant:
 
-![OASA's expected travel time per segment, by hour of day](./040-analysis/output/model_segment_estimate_by_hour.png)
+![OASA's expected travel time per segment, by hour of day](./oasa-accuracy-analysis/output/model_segment_estimate_by_hour.png)
 
 The longest segment (240090 → 400005) sits at 15 minutes overnight and 22 minutes at 9am. And there is an evening plateau too. **So the model definitely knows about the time of day.** A pure distance model could not do that.
 
@@ -163,14 +163,14 @@ I will keep the collector running into the winter. The August data is useful as 
 
 ```bash
 # collector (let this run for a few days)
-cd 040-collector
+cd oasa-accuracy-collector
 cp .env.example .env #fill out the env
 docker compose up -d --build
 
 cd ..
 
 # analysis (run this once you have enough data)
-cd 040-analysis
+cd oasa-accuracy-analysis
 cp .env.example .env #fill out the env
 docker compose run --rm --build analysis
 ```
@@ -185,4 +185,4 @@ Edit `routes.json` to change which routes and stops get polled:
 
 Stops have to be listed in **travel order**. Several of the charts plot results along the route, and a reversed list will silently reverse them.
 
-Charts get written to `040-analysis/output/`.
+Charts get written to `oasa-accuracy-analysis/output/`.
