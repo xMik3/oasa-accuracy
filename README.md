@@ -2,7 +2,7 @@
 
 How accurate are Athens bus (OASA) ETA predictions, and what kind of model is behind them?
 
-I built a collector that polls OASA's live ETA feed every 45 seconds and saves every prediction to a database. It has been running since 27 July 2026 on my home server and has collected 586k polls, 509k of which are usable after filtering. A Python script then reads the database, works out when each bus actually arrived, and compares that to every prediction made about it.
+I built a collector that polls OASA's live ETA feed every 45 seconds and saves every prediction to a database. It has been running since 27 July 2026 on my home server and has collected 744k polls. A Python script then reads the database, works out when each bus actually arrived, and compares that to every prediction made about it.
 
 Node.js collector -> MySQL -> pandas/matplotlib. Both run in Docker. You point it at any OASA routes and stops by editing `routes.json`.
 
@@ -33,7 +33,11 @@ I picked the 040 (Athens - Piraeus) route for a few reasons:
 2. It goes straight through the centre of Athens, so it gets hit by traffic.
 3. It runs day and night, so I get all 24 hours covered.
 
-The ETA API is public and rate limited, so I can't poll all 38 stops every cycle. I had to compromise. I sampled 6 stops in the Syntagma → Piraeus direction and 4 in the Piraeus → Syntagma one, spread out along the route.
+The ETA API is public and rate limited, so I can't poll all 38 stops every cycle. I had to compromise. Initially, I sampled 7 stops for each route, however, route 040 was running on a special roadwork version different from the normal at the start of collection, after the return to the normal route (at the 11th of August) a total of four (three from Piraeus -> Syntagma and one from Syntagma -> Piraeus) stops were not used anymore. As a result I continued to sample the remaining 6 stops in the Syntagma -> Piraeus direction and the 4 in the Piraeus -> Syntagma.
+
+Since rows were tagged with the collector configuration that produced them, I was able to distinguish data from before (collector version 2) and after the change (collector version 3).
+
+Data from all versions was only used in the accuracy distributions charts, all other charts used data collected from version 2 and 1 since they are stop dependent. The script as published however uses everything.
 
 ![Route diagram showing all 38 stops with the sampled ones highlighted](./assets/routeDiagram.png)
 
@@ -50,6 +54,8 @@ The collector polls OASA's ETA endpoint about each stop I configured and writes 
 | `stop_code` | which stop |
 | `eta_minutes` | minutes until arrival, as the API reports it |
 | `fetched_at_utc` | when the prediction was made |
+| `active` | field to mark poll inactive (for a discontinued stop for example) |
+| `collector_version` | field to mark data collected with different collector versions |
 
 I started polling every 30 seconds. Then I compared consecutive polls and found the backend only updates every 60 seconds, so half of what I was saving was just a copy of the row before it. I moved to 45 seconds, which cuts the duplicates without ever being slow enough to miss an update.
 
@@ -85,7 +91,7 @@ The feed says "0 minutes" for a stretch of time, both while the bus is arriving 
 
 ## Results
 
-Collection started on 27 July 2026. **Everything here is August data**, which is the emptiest month of the year in Athens. There is much less traffic than normal, so the model is under a lot less stress than it would be in winter. Treat these numbers as close to a best case.
+Collection started on 27 July 2026. **Everything here is Late July / August data**, which is the emptiest month of the year in Athens. There is much less traffic than normal, so the model is under a lot less stress than it would be in winter. Treat these numbers as close to a best case.
 
 ### How is the error spread out?
 
@@ -130,7 +136,7 @@ Restricting to 3–7 minute predictions lifts the whole line to around 65%, but 
 
 ![Accuracy within 1 minute by hour, 3-7 minute predictions](./oasa-accuracy-analysis/output/accuracy_within_1min_by_hour_eta_3-7.png)
 
-Hour of day isn't what determines accuracy; how far ahead the prediction was made is.
+Hour of day isn't what determines accuracy, how far ahead the prediction was made is.
 
 There is also a better reason for it being flat than "traffic doesn't affect buses", and it comes from the next section. **The model already adjusts for the time of day**, so accuracy stays level even though the roads don't.
 
@@ -153,7 +159,10 @@ The three shorter segments look flat, but that is just resolution. The API only 
 ## Limitations
 
 - **The month.** This is all August data, when Athens is empty. The traffic the model is built to handle is mostly not there.
+
 - **The arrival is inferred, not observed.** I rebuild it from the feed's own countdown, so if OASA is systematically off in how it reports the last minute, that goes straight into all of my numbers.
+
+- **The alignment.** Part of this is the roadwork diversion rather than the 040's normal route. Stop-dependent results use the diversion only; the accuracy distributions pool both. The model findings are properties of the prediction system, so they should carry over.
 
 ## Future
 
@@ -179,7 +188,9 @@ Edit `routes.json` to change which routes and stops get polled:
 
 ```json
 {
-  "3923": ["60805", "240054", "240085", "240090", "400005", "400009"]
+  "routes":{
+    "3923": ["60805", "240054", "240085", "240090", "400005", "400009"]
+  }
 }
 ```
 

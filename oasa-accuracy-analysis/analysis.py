@@ -42,7 +42,7 @@ def make_engine():
 
 def load_observations(engine):
     return pandas.read_sql("""
-        SELECT fetched_at_utc, stop_code, route_code, veh_code, eta_minutes
+        SELECT fetched_at_utc, stop_code, route_code, veh_code, eta_minutes, collector_version
         FROM collector.eta_observations
     """, engine, parse_dates=["fetched_at_utc"])
 
