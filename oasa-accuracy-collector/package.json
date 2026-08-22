@@ -1,5 +1,5 @@
 {
-  "name": "040-collector",
+  "name": "oasa-accuracy-collector",
   "version": "1.0.0",
   "description": "Collects bus station ETA data for delay analysis.",
   "main": "collector.js",

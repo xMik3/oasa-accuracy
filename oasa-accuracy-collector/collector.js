@@ -7,7 +7,7 @@ import path from "path";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROUTE_STOPS = JSON.parse(
   readFileSync(path.join(__dirname, "routes.json"), "utf8")
-);
+).routes;
 
 const API = "https://telematics.oasa.gr/api/";
 const ROUTES = Object.keys(ROUTE_STOPS);
@@ -46,6 +46,7 @@ async function pollStop(stopCode) {
 
 
     if (!resp.ok){
+	    await resp.body?.cancel();
 	    return { at, stopCode, status: "error" };
     }
 
