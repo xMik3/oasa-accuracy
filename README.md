@@ -2,7 +2,7 @@
 
 How accurate are Athens bus (OASA) ETA predictions, and what kind of model is behind them?
 
-I built a collector that polls OASA's live ETA feed every 45 seconds and saves every prediction to a database. It has been running since 27 July 2026 on my home server and has collected 744k polls. A Python script then reads the database, works out when each bus actually arrived, and compares that to every prediction made about it.
+I built a collector that polls OASA's live ETA feed every 45 seconds and saves every prediction to a database. It has been running since on my home server and has collected 1.92 million polls. A Python script then reads the database, works out when each bus actually arrived, and compares that to every prediction made about it.
 
 Node.js collector -> MySQL -> pandas/matplotlib. Both run in Docker. You point it at any OASA routes and stops by editing `routes.json`.
 
@@ -35,9 +35,9 @@ I picked the 040 (Athens - Piraeus) route for a few reasons:
 
 The ETA API is public and rate limited, so I can't poll all 38 stops every cycle. I had to compromise. Initially, I sampled 7 stops for each route, however, route 040 was running on a special roadwork version different from the normal at the start of collection, after the return to the normal route (at the 11th of August) a total of four (three from Piraeus -> Syntagma and one from Syntagma -> Piraeus) stops were not used anymore. As a result I continued to sample the remaining 6 stops in the Syntagma -> Piraeus direction and the 4 in the Piraeus -> Syntagma.
 
-Since rows were tagged with the collector configuration that produced them, I was able to distinguish data from before (collector version 2) and after the change (collector version 3).
+Since rows were tagged with the collector configuration that produced them, I was able to distinguish data from before (collector version 2) and after the change (collector version 3), marking August data as collector version 3, and September data as version 4.
 
-Data from all versions was only used in the accuracy distributions charts, all other charts used data collected from version 2 and 1 since they are stop dependent. The script as published however uses everything.
+Data from versions 1, 2, and 3 were used in the accuracy distribution charts, while versions 1 and 2 were used for stop-dependent charts due to the roadwork diversion. September data (version 4) was incorporated into the accuracy distribution and model segment analyses to verify system behavior under heavier seasonal city traffic.
 
 ![Route diagram showing all 38 stops with the sampled ones highlighted](./assets/routeDiagram.png)
 
@@ -91,7 +91,7 @@ The feed says "0 minutes" for a stretch of time, both while the bus is arriving 
 
 ## Results
 
-Collection started on 27 July 2026. **Everything here is Late July / August data**, which is the emptiest month of the year in Athens. There is much less traffic than normal, so the model is under a lot less stress than it would be in winter. Treat these numbers as close to a best case.
+Data collection was split into two parts, the month of August with 744 thousand polls, and the month of September with 1.18 million polls. Comparing August and September data, I was surprised to discover that both the error rates and the expected road segment times remained relatively the same, with only small deviations.
 
 ### How is the error spread out?
 
@@ -150,7 +150,7 @@ Comparing only polls made from a similar distance away, so the horizon stays con
 
 ![OASA's expected travel time per segment, by hour of day](./oasa-accuracy-analysis/output/model_segment_estimate_by_hour.png)
 
-The longest segment (240090 → 400005) sits at 15 minutes overnight and 22 minutes at 9am. And there is an evening plateau too. **So the model definitely knows about the time of day.** A pure distance model could not do that.
+In the August data, the longest segment (240090 → 400005) sits at 15 minutes overnight and 22 minutes at 9am. In September data this exact segment sits at 12 minutes overnight and 20 minutes at 9am. **So the model definitely knows about the time of day.** A pure distance model could not do that.
 
 The three shorter segments look flat, but that is just resolution. The API only gives whole minutes, so a 15% slowdown on a 7 minute road rounds to a single step. All three of them step up at 08:00 and back down at 22:00, at the same time as the long one, so they are clearly reading off the same profile.
 
@@ -158,15 +158,9 @@ The three shorter segments look flat, but that is just resolution. The API only 
 
 ## Limitations
 
-- **The month.** This is all August data, when Athens is empty. The traffic the model is built to handle is mostly not there.
-
 - **The arrival is inferred, not observed.** I rebuild it from the feed's own countdown, so if OASA is systematically off in how it reports the last minute, that goes straight into all of my numbers.
 
-- **The alignment.** Part of this is the roadwork diversion rather than the 040's normal route. Stop-dependent results use the diversion only; the accuracy distributions pool both. The model findings are properties of the prediction system, so they should carry over.
-
-## Future
-
-I will keep the collector running into the winter. The August data is useful as a baseline. Once traffic comes back, the same pipeline on the same stops tells me whether accuracy drops everywhere or only in certain places and hours, and whether a genuinely bad traffic day moves the model's expectations at all.
+- **The alignment.** Part of the August data is the roadwork diversion rather than the 040's normal route. Stop-dependent results use the diversion only; the accuracy distributions pool both. The model findings are properties of the prediction system, so they should carry over.
 
 ## Running It Yourself
 
